@@ -186,7 +186,8 @@ pip install -r requirements.txt
 cp .env.example .env
 $EDITOR .env                    # add the keys you have; everything is optional
 
-python main.py check            # validate config, see what will run
+python main.py check            # validate config, see what will run (offline)
+python main.py doctor           # prove each provider works, one live request each
 python main.py run --dry-run    # full pipeline, no alerts sent
 python main.py run              # for real
 python main.py watch            # daemon on POLL_INTERVAL_MINUTES
@@ -199,7 +200,8 @@ Nothing is mandatory. Each provider switches on when its key is present, and
 
 | Command | Purpose |
 |---|---|
-| `check` | Validate configuration, print criteria and provider status |
+| `check` | Validate configuration, print criteria and provider status (offline) |
+| `doctor` | Probe every configured provider with one real request; prints a field-coverage table |
 | `run` | One pipeline pass (`--dry-run` to skip alerts) |
 | `watch` | Run forever on `POLL_INTERVAL_MINUTES`, handling SIGINT/SIGTERM cleanly |
 | `stats` | Database summary, including cross-portal duplicate count |
@@ -307,6 +309,11 @@ Adding an alert channel means subclassing `AlertChannel` and implementing
 
 ## Operational notes and limitations
 
+* **Nothing here has been run against the live services.** Every adapter is
+  tested against recorded payloads, which proves the parsing but not the
+  endpoints. Run `python main.py doctor` first: it makes one real request per
+  provider and prints which fields each actually returns, so you learn that a
+  source publishes no descriptions before an empty inbox teaches you.
 * **Third-party wrapper APIs are unstable by nature.** The tolerant field maps
   and structural fallback are designed for that, but if a wrapper changes
   fundamentally you will see it in the run summary as a source returning zero
