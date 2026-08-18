@@ -1,0 +1,26 @@
+# ---------------------------------------------------------------------------
+# Miami Coastal Condo Rental Monitor -- runtime dependencies
+# ---------------------------------------------------------------------------
+
+# HTTP / networking
+requests==2.32.3
+urllib3==2.2.3
+tenacity==9.0.0                 # retry/backoff for flaky portal wrappers
+
+# Configuration
+python-dotenv==1.0.1
+PyYAML==6.0.2
+
+# Module 2: anti-bot scraping fallback
+scrapingbee==2.0.1              # official ScrapingBee SDK
+selectolax==0.3.27              # fast HTML parsing for scraped pages
+
+# Scheduling (long-running daemon mode)
+schedule==1.2.2
+
+# CLI / output
+rich==13.9.4
+
+# ---------------------------------------------------------------------------
+# Dev / test extras (install with: pip install -r requirements-dev.txt)
+# ---------------------------------------------------------------------------

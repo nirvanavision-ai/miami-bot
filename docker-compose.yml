@@ -1,0 +1,16 @@
+services:
+  monitor:
+    build: .
+    image: miami-condo-monitor:latest
+    container_name: miami-condo-monitor
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_PATH: /app/data/listings.db
+      LOG_FILE: /app/data/miami_bot.log
+      HTTP_CACHE_DIR: /app/data/cache
+    volumes:
+      - ./data:/app/data
+      # Mount the criteria read-only so tuning the search needs no rebuild.
+      - ./config.yaml:/app/config.yaml:ro
+    command: ["watch"]

@@ -1,0 +1,188 @@
+# =============================================================================
+# Search criteria & hard constraints.
+# Everything the bot filters on lives here so tuning the search never requires
+# touching Python. Values are validated on load (see miami_bot/config.py).
+# =============================================================================
+
+search:
+  # ---------------------------------------------------------------------------
+  # Geography -- coastal Miami barrier-island municipalities.
+  # `zip_codes` drives the API queries; `cities` is the post-fetch whitelist.
+  # ---------------------------------------------------------------------------
+  cities:
+    - Miami Beach
+    - Surfside
+    - Bal Harbour
+    - Bay Harbor Islands
+    - Sunny Isles Beach
+  state: FL
+  zip_codes:
+    - "33139"   # South Beach
+    - "33140"   # Mid Beach
+    - "33141"   # North Beach / Normandy Isle
+    - "33154"   # Surfside / Bal Harbour / Bay Harbor Islands
+    - "33160"   # Sunny Isles Beach
+  # Only accept listings whose city matches `cities` (guards against wrapper
+  # APIs bleeding in neighbouring ZIPs such as Aventura or North Miami).
+  enforce_city_whitelist: true
+
+  # ---------------------------------------------------------------------------
+  # Ocean proximity. Distance is computed from the listing lat/lon to the
+  # Atlantic shoreline reference polyline (see miami_bot/geo.py).
+  # ---------------------------------------------------------------------------
+  max_miles_from_ocean: 0.6
+  # Listings with no coordinates can't be measured; keep them and flag rather
+  # than silently dropping (portal wrappers often omit lat/lon).
+  require_coordinates: false
+
+  # ---------------------------------------------------------------------------
+  # Property
+  # ---------------------------------------------------------------------------
+  property_types:
+    - condo
+    - condominium
+    - apartment          # many wrappers label condo units as "apartment"
+    - co-op
+  min_beds: 2
+  min_baths: 2
+  min_sqft: 1200
+  # Reject an otherwise-matching listing whose sqft is unknown after county
+  # verification? false = surface it with a "sqft unverified" warning.
+  require_known_sqft: false
+
+  # ---------------------------------------------------------------------------
+  # Budget (monthly rent, USD)
+  # ---------------------------------------------------------------------------
+  min_price: 5000
+  max_price: 12000
+
+  # ---------------------------------------------------------------------------
+  # Lease term: strictly 6-12 months.
+  # ---------------------------------------------------------------------------
+  min_lease_months: 6
+  max_lease_months: 12
+  # When the listing text states no term at all, keep it and flag for review.
+  require_explicit_lease_term: false
+
+  # Any of these in the title/description/terms disqualifies the listing.
+  excluded_keywords:
+    - short term
+    - short-term
+    - shortterm
+    - vacation
+    - vacation rental
+    - seasonal
+    - season only
+    - daily
+    - per day
+    - nightly
+    - per night
+    - weekly
+    - per week
+    - month to month
+    - month-to-month
+    - monthly rental
+    - airbnb
+    - air bnb
+    - vrbo
+    - transient
+    - snowbird
+    - furnished short
+    - flexible terms
+    - 1-3 months
+    - 3 month minimum
+    - 30 day minimum
+    - 90 days
+
+  # Phrases that positively confirm an annual-style term. Used to rescue a
+  # listing whose numeric term is unparseable.
+  positive_term_keywords:
+    - annual
+    - annual lease
+    - yearly
+    - year lease
+    - 12 month
+    - 12-month
+    - one year
+    - 1 year
+    - long term
+    - long-term
+    - unfurnished annual
+
+  # ---------------------------------------------------------------------------
+  # Building quality: "newer construction / renovated with luxury amenities".
+  # ---------------------------------------------------------------------------
+  building:
+    # Built at or after this year passes on age alone.
+    min_year_built: 2005
+    # Older buildings still qualify if the copy says renovated AND they clear
+    # the amenity bar below.
+    allow_older_if_renovated: true
+    renovation_keywords:
+      - renovated
+      - fully renovated
+      - completely renovated
+      - remodeled
+      - gut renovated
+      - new construction
+      - newly built
+      - just completed
+      - brand new
+      - turnkey
+      - restored
+    # Minimum number of distinct luxury amenities that must be detected.
+    min_amenity_matches: 3
+    luxury_amenities:
+      valet: [valet, valet parking]
+      concierge: [concierge, front desk, 24-hour desk, 24/7 concierge]
+      doorman: [doorman, door man]
+      pool: [pool, infinity pool, rooftop pool, lap pool]
+      gym: [gym, fitness center, fitness centre, health club, wellness center]
+      spa: [spa, sauna, steam room, hammam]
+      beach_service: [beach service, beach club, private beach, beach access]
+      security: [24-hour security, 24/7 security, security guard, gated]
+      balcony: [balcony, terrace, wraparound balcony, private terrace]
+      ocean_view: [ocean view, oceanfront, direct ocean, sea view, water view]
+      parking: [garage parking, assigned parking, covered parking, self parking]
+      tennis: [tennis court, pickleball, padel]
+      business: [business center, conference room, co-working]
+      pet: [pet friendly, dog park, pet spa]
+      smart: [smart home, private elevator, semi-private elevator]
+
+# =============================================================================
+# Pipeline behaviour
+# =============================================================================
+pipeline:
+  # Primary APIs are considered "stale" when they return fewer than this many
+  # candidates in total; that trips the ScrapingBee fallback (Module 2).
+  staleness_min_results: 5
+  # Also trip the fallback when this fraction of primary sources errored.
+  staleness_error_ratio: 0.5
+  # Force the scraper on every run regardless of primary health.
+  always_run_scraper: false
+
+  # Module 3 enrichment
+  enrichment:
+    enabled: true
+    # Only enrich listings that already passed the hard filters -- AVM calls
+    # are metered and there is no point pricing a listing we won't alert on.
+    only_matched: true
+    rentcast: true
+    housecanary: false
+    county_assessor: true
+    # Flag when asking rent exceeds the AVM estimate by more than this ratio.
+    overpriced_threshold: 1.15
+    # Flag as a deal when asking rent is below the AVM by more than this.
+    underpriced_threshold: 0.90
+
+  # Alerting
+  alerts:
+    # Re-alert when the price falls by at least this much (absolute or pct).
+    price_drop_min_dollars: 100
+    price_drop_min_pct: 0.02
+    # Never send more than this many alerts in a single run.
+    max_alerts_per_run: 25
+    # Suppress repeat alerts for the same unit within this window.
+    cooldown_hours: 24
+    # Include listings that passed with warnings (e.g. unverified sqft).
+    include_warned: true
