@@ -235,3 +235,82 @@ def test_filter_stats_tallies_rejection_reasons(criteria):
         stats.record(evaluate(listing, criteria))
     assert stats.evaluated == 3 and stats.passed == 1
     assert dict(stats.top_reasons())["price"] == 1
+
+
+# --- required amenities ---------------------------------------------------
+def test_a_required_amenity_is_mandatory_not_merely_counted(criteria):
+    """ocean_view alone must gate the listing, independent of the count."""
+    criteria.building.required_amenities = ["ocean_view"]
+    # Five amenities -- comfortably over the count of 3 -- but no ocean view.
+    # The title is cleared too: the default fixture says "Oceanfront 2BR", and
+    # the amenity scan reads every text field, not just the description.
+    result = evaluate(
+        make_listing(
+            title="City-view residence",
+            description=(
+                "Annual lease. City and garden views. "
+                "Valet, concierge, pool, spa, fitness center."
+            ),
+        ),
+        criteria,
+    )
+    assert not result.passed
+    assert "missing required amenity" in reasons(result)
+
+
+def test_a_listing_with_the_required_amenity_passes(criteria):
+    criteria.building.required_amenities = ["ocean_view"]
+    result = evaluate(
+        make_listing(
+            description=(
+                "Annual lease 6-12 months. Direct ocean views from every room. "
+                "Valet, concierge, pool, spa, fitness center."
+            )
+        ),
+        criteria,
+    )
+    assert result.passed, result.reason
+    assert "ocean_view" in result.listing.amenity_matches
+
+
+@pytest.mark.parametrize(
+    "phrase",
+    ["ocean view", "ocean views", "oceanfront", "direct ocean access", "sea views",
+     "panoramic ocean vistas", "unobstructed ocean", "beach view", "ocean facing"],
+)
+def test_ocean_view_vocabulary(criteria, phrase):
+    criteria.building.required_amenities = ["ocean_view"]
+    result = evaluate(
+        make_listing(
+            description=(
+                f"Annual lease. {phrase} throughout. "
+                "Valet, concierge, pool, spa, gym."
+            )
+        ),
+        criteria,
+    )
+    assert result.passed, f"{phrase!r} should register as an ocean view: {result.reason}"
+
+
+def test_no_required_amenities_means_the_count_alone_decides(criteria):
+    criteria.building.required_amenities = []
+    result = evaluate(
+        make_listing(description="Annual lease. Valet, concierge, pool, spa."),
+        criteria,
+    )
+    assert result.passed
+
+
+def test_two_bed_two_bath_apartments_are_accepted(criteria):
+    """'Apartment' is how several portals label a condo unit for rent."""
+    result = evaluate(
+        make_listing(
+            property_type="Apartment", beds=2, baths=2,
+            description=(
+                "Annual lease 6-12 months. Ocean view residence. "
+                "Valet, concierge, pool, spa, gym."
+            ),
+        ),
+        criteria,
+    )
+    assert result.passed, result.reason

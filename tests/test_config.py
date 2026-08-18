@@ -101,3 +101,22 @@ def test_malformed_yaml_is_reported_clearly(tmp_path):
     path.write_text("search: [unclosed\n")
     with pytest.raises(ConfigError, match="not valid YAML"):
         Settings.load(path, env_file=None)
+
+
+def test_required_amenities_load_from_yaml(settings):
+    assert settings.search.building.required_amenities == ["ocean_view"]
+
+
+def test_a_typo_in_required_amenities_is_caught_at_load_time(tmp_path):
+    """A misspelled category would silently reject every listing forever."""
+    path = tmp_path / "typo.yaml"
+    path.write_text(
+        "search:\n"
+        "  cities: [Miami Beach]\n"
+        "  building:\n"
+        "    luxury_amenities:\n"
+        "      ocean_view: [ocean view]\n"
+        "    required_amenities: [oceanview]\n"
+    )
+    with pytest.raises(ConfigError, match="unknown category"):
+        Settings.load(path, env_file=None)

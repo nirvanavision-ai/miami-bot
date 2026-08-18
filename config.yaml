@@ -132,6 +132,11 @@ search:
       - restored
     # Minimum number of distinct luxury amenities that must be detected.
     min_amenity_matches: 3
+    # Amenity categories that are MANDATORY, not merely counted toward the
+    # threshold above. A listing missing any of these is rejected outright.
+    # Category names must exist in luxury_amenities below (validated on load).
+    required_amenities:
+      - ocean_view
     luxury_amenities:
       valet: [valet, valet parking]
       concierge: [concierge, front desk, 24-hour desk, 24/7 concierge]
@@ -142,7 +147,10 @@ search:
       beach_service: [beach service, beach club, private beach, beach access]
       security: [24-hour security, 24/7 security, security guard, gated]
       balcony: [balcony, terrace, wraparound balcony, private terrace]
-      ocean_view: [ocean view, oceanfront, direct ocean, sea view, water view]
+      ocean_view: [ocean view, ocean views, oceanfront, ocean front, direct ocean,
+                   sea view, sea views, water view, water views, panoramic ocean,
+                   unobstructed ocean, beach view, atlantic view, ocean facing,
+                   oceanview, sunrise view]
       parking: [garage parking, assigned parking, covered parking, self parking]
       tennis: [tennis court, pickleball, padel]
       business: [business center, conference room, co-working]

@@ -263,6 +263,17 @@ def _check_building(
             )
             return
 
+    missing = [
+        name for name in building.required_amenities
+        if name not in listing.amenity_matches
+    ]
+    if missing:
+        failures.append(
+            f"building: missing required amenity/amenities "
+            f"{', '.join(name.replace('_', ' ') for name in missing)}"
+        )
+        return
+
     if amenity_count < building.min_amenity_matches:
         failures.append(
             f"building: only {amenity_count} luxury amenities detected "

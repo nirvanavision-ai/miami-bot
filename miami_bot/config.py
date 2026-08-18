@@ -277,6 +277,9 @@ class BuildingCriteria:
     renovation_keywords: list[str] = field(default_factory=list)
     min_amenity_matches: int = 3
     luxury_amenities: dict[str, list[str]] = field(default_factory=dict)
+    #: Amenity categories that are mandatory, not merely counted. A listing
+    #: missing any of these fails outright even if it clears the count.
+    required_amenities: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -325,6 +328,20 @@ class SearchCriteria:
             raise ConfigError("search needs at least one city or ZIP code")
         if self.max_miles_from_ocean <= 0:
             raise ConfigError("search.max_miles_from_ocean must be positive")
+
+        # A typo in required_amenities would silently reject every listing, so
+        # it is caught at load time rather than at 3am with an empty inbox.
+        unknown = [
+            name for name in self.building.required_amenities
+            if name not in self.building.luxury_amenities
+        ]
+        if unknown:
+            known = ", ".join(sorted(self.building.luxury_amenities))
+            raise ConfigError(
+                f"search.building.required_amenities references unknown "
+                f"{'categories' if len(unknown) > 1 else 'category'} "
+                f"{', '.join(unknown)}. Known categories: {known}"
+            )
 
 
 @dataclass
@@ -460,6 +477,7 @@ def _load_criteria(path: Path) -> tuple[SearchCriteria, PipelineCriteria]:
         luxury_amenities={
             str(k): list(v or []) for k, v in (raw_building.get("luxury_amenities") or {}).items()
         },
+        required_amenities=[str(a) for a in (raw_building.get("required_amenities") or [])],
     )
 
     search = SearchCriteria(

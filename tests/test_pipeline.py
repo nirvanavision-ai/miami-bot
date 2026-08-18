@@ -191,8 +191,12 @@ def test_county_data_can_reverse_a_match_after_enrichment(wired):
     wired.county.enabled = True
     wired.pipeline.enrichment.county_assessor = True
     inflated = [dict(payloads.ZILLOW_SEARCH["props"][0], livingArea=1650)]
-    _mock_zillow(inflated, detail={"zpid": "43567890", "yearBuilt": 2018,
-                                   "description": "Annual lease. Valet, concierge, pool, spa."})
+    _mock_zillow(inflated, detail={
+        "zpid": "43567890", "yearBuilt": 2018,
+        # Ocean view included so the listing reaches the size check -- this test
+        # is about county sqft reversing a match, not about amenities.
+        "description": "Annual lease. Ocean view. Valet, concierge, pool, spa.",
+    })
     responses.add(responses.GET, wired.county.pa_proxy_url,
                   json=payloads.MIAMIDADE_ADDRESS_SEARCH, status=200)
     responses.add(responses.GET, wired.county.pa_proxy_url,

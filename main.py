@@ -56,8 +56,12 @@ def command_check(settings: Settings) -> int:
           f"{search.min_sqft:,} sqft")
     print(f"  lease term        : {search.min_lease_months}-{search.max_lease_months} months")
     print(f"  excluded keywords : {len(search.excluded_keywords)} configured")
+    print(f"  property types    : {', '.join(search.property_types)}")
     print(f"  building          : built {search.building.min_year_built}+ "
           f"(or renovated), {search.building.min_amenity_matches}+ luxury amenities")
+    if search.building.required_amenities:
+        required = ", ".join(a.replace("_", " ") for a in search.building.required_amenities)
+        print(f"  required amenities: {required}")
 
     print("\nProviders")
     for name, enabled in settings.provider_status().items():
