@@ -2,6 +2,7 @@
 """Miami coastal luxury condo rental monitor -- command line entry point.
 
     python main.py check                # validate config, show what will run
+    python main.py doctor               # probe each provider with one real request
     python main.py run                  # one pipeline pass
     python main.py run --dry-run        # everything except sending alerts
     python main.py watch                # run forever on POLL_INTERVAL_MINUTES
@@ -27,6 +28,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from miami_bot import __version__
 from miami_bot.config import ConfigError, Settings
 from miami_bot.db import Database
+from miami_bot.doctor import render, run_diagnostics
 from miami_bot.pipeline import Pipeline
 from miami_bot.util.logging import get_logger, setup_logging
 
@@ -76,6 +78,15 @@ def command_check(settings: Settings) -> int:
     print(f"\nDatabase: {settings.database_path}")
     print(f"Dry run : {settings.dry_run}\n")
     return 0
+
+
+def command_doctor(settings: Settings) -> int:
+    """Probe every configured provider with one real request each."""
+    results = run_diagnostics(settings)
+    print(render(results))
+    failed = [r for r in results if r.status() == "FAIL"]
+    empty = [r for r in results if r.is_source and r.ok and r.count == 0 and not r.skipped]
+    return 1 if (failed or empty) else 0
 
 
 def command_run(settings: Settings) -> int:
@@ -231,6 +242,7 @@ def build_parser() -> argparse.ArgumentParser:
                             help="do everything except sending alerts")
 
     sub.add_parser("watch", help="run continuously on POLL_INTERVAL_MINUTES")
+    sub.add_parser("doctor", help="probe every configured provider with one live request")
     sub.add_parser("stats", help="summarise the database")
     sub.add_parser("test-alert", help="send a synthetic alert to every channel")
 
@@ -269,6 +281,7 @@ def main(argv: list[str] | None = None) -> int:
     handlers = {
         "check": lambda: command_check(settings),
         "run": lambda: command_run(settings),
+        "doctor": lambda: command_doctor(settings),
         "watch": lambda: command_watch(settings),
         "stats": lambda: command_stats(settings),
         "list": lambda: command_list(settings, args.limit),
