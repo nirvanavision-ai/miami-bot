@@ -267,6 +267,20 @@ def _check_building(
         name for name in building.required_amenities
         if name not in listing.amenity_matches
     ]
+
+    # A structured feed with no description cannot evidence any amenity. Failing
+    # on that says the feed is thin, not that the building lacks a pool -- so it
+    # is flagged for confirmation instead, exactly as unknown sqft is.
+    if not listing.has_descriptive_text and not building.require_amenity_evidence:
+        if missing or amenity_count < building.min_amenity_matches:
+            wanted = ", ".join(
+                name.replace("_", " ") for name in (missing or ["luxury amenities"])
+            )
+            warnings.append(
+                f"building: source published no description -- {wanted} unverified"
+            )
+        return
+
     if missing:
         failures.append(
             f"building: missing required amenity/amenities "

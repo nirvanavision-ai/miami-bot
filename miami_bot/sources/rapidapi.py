@@ -268,8 +268,14 @@ class ZillowRapidSource(RapidApiSource):
     name = "rapidapi_zillow"
     label = "Zillow (RapidAPI)"
     site_base_url = "https://www.zillow.com"
-    search_path = "/propertyExtendedSearch"
-    detail_path = "/property"
+
+    @property
+    def search_path(self) -> str:
+        return self.settings.zillow_search_path
+
+    @property
+    def detail_path(self) -> str:
+        return self.settings.zillow_detail_path
 
     field_map = FieldMap(
         source_id=("zpid", "id"),

@@ -138,6 +138,42 @@ URL.
 
 ---
 
+## Running it without paid APIs
+
+Three tiers, cheapest first. They compose — enable several and the pipeline
+deduplicates across them.
+
+| Tier | Source | Cost | Trade-off |
+|---|---|---|---|
+| 0 | **Craigslist** (`CRAIGSLIST_ENABLED=true`) | free, no key | no coordinates or street address, so ocean distance and unit hashing degrade to warnings |
+| 1 | **RentCast** (`RENTCAST_API_KEY`) | free tier | no description, photos or listing URL — amenity and lease checks become advisory; MLS number carries the lookup |
+| 2 | **ScrapingBee** (`SCRAPINGBEE_API_KEY`) | free credits | the only way to reach Zillow/Redfin; credit-capped per run |
+| 3 | **RapidAPI** (`RAPIDAPI_KEY`) | paid tiers | the richest data — descriptions, photos, lease terms |
+
+Tier 0 alone is a working search. Tier 0 + 1 is the sweet spot: Craigslist
+brings by-owner inventory and the prose needed to judge lease terms, RentCast
+brings clean MLS-sourced specs and coordinates, and the two dedupe against each
+other.
+
+RentCast is used twice over — as a Module 1 listing source
+(`/listings/rental/long-term`) and as the Module 3 rent AVM — off one key. The
+listing search pushes the budget and layout constraints into the query as
+server-side numeric ranges, so one call per ZIP (5 per run) fits the free tier.
+
+### Zillow wrappers other than the default
+
+Several competing Zillow wrappers are sold on RapidAPI (Axesso among them),
+exposing the same data under different paths. Point the adapter at any of them
+from `.env` — the field maps are path-tolerant:
+
+```bash
+RAPIDAPI_ZILLOW_HOST=axesso-zillow-data-service.p.rapidapi.com
+RAPIDAPI_ZILLOW_SEARCH_PATH=/zillow/search
+RAPIDAPI_ZILLOW_DETAIL_PATH=/zillow/property
+```
+
+Confirm the paths against your subscription's own documentation.
+
 ## Quick start
 
 ```bash

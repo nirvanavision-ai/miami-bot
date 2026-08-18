@@ -202,6 +202,23 @@ class Listing:
         return " . ".join(clean_text(c) for c in chunks if c)
 
     @property
+    def has_descriptive_text(self) -> bool:
+        """Whether the source supplied prose worth scanning for amenities.
+
+        Structured feeds (RentCast's listings endpoint, a bare MLS export) carry
+        specs but no description. Judging such a listing to have "0 luxury
+        amenities" is a statement about the feed, not about the building, so the
+        filters downgrade amenity checks to warnings when this is False.
+
+        ``status`` and ``property_type`` are excluded deliberately: "Active" and
+        "Condo" are present on every record and would mask an empty listing.
+        """
+        prose = " ".join(
+            clean_text(chunk) for chunk in (self.title, self.description, *self.amenities)
+        )
+        return len(prose.strip()) >= 40
+
+    @property
     def primary_photo(self) -> str | None:
         return self.photos[0] if self.photos else None
 

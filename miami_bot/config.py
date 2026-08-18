@@ -78,6 +78,12 @@ class RapidApiSettings:
     realtor_host: str = "realty-in-us.p.rapidapi.com"
     redfin_host: str = "redfin-com-data.p.rapidapi.com"
     enabled_sources: list[str] = field(default_factory=lambda: ["zillow", "realtor"])
+    #: Endpoint paths for the Zillow wrapper. Overridable because the RapidAPI
+    #: marketplace carries several competing Zillow wrappers (Axesso and others)
+    #: that expose the same data under different paths. Point these at whatever
+    #: your subscription documents and the tolerant field maps do the rest.
+    zillow_search_path: str = "/propertyExtendedSearch"
+    zillow_detail_path: str = "/property"
 
     @property
     def enabled(self) -> bool:
@@ -93,6 +99,8 @@ class RapidApiSettings:
             enabled_sources=[
                 s.lower() for s in _env_list("RAPIDAPI_ENABLED_SOURCES", ["zillow", "realtor"])
             ],
+            zillow_search_path=_env("RAPIDAPI_ZILLOW_SEARCH_PATH", "/propertyExtendedSearch"),
+            zillow_detail_path=_env("RAPIDAPI_ZILLOW_DETAIL_PATH", "/property"),
         )
 
 
@@ -153,6 +161,9 @@ class ScrapingBeeSettings:
 class RentCastSettings:
     api_key: str = ""
     base_url: str = "https://api.rentcast.io/v1"
+    #: Use RentCast's active-listings endpoint as a Module 1 source, not just as
+    #: a Module 3 rent AVM. Cheap enough for the free tier: one call per ZIP.
+    use_as_listing_source: bool = True
 
     @property
     def enabled(self) -> bool:
@@ -163,6 +174,26 @@ class RentCastSettings:
         return cls(
             api_key=_env("RENTCAST_API_KEY"),
             base_url=_env("RENTCAST_BASE_URL", "https://api.rentcast.io/v1").rstrip("/"),
+            use_as_listing_source=_env_bool("RENTCAST_AS_LISTING_SOURCE", True),
+        )
+
+
+@dataclass
+class CraigslistSettings:
+    """Zero-credential RSS source.
+
+    Off by default: the inventory is noisier than the portals and the feed
+    publishes no coordinates, so ocean proximity cannot be measured.
+    """
+
+    enabled: bool = False
+    sites: list[str] = field(default_factory=lambda: ["miami"])
+
+    @classmethod
+    def from_env(cls) -> CraigslistSettings:
+        return cls(
+            enabled=_env_bool("CRAIGSLIST_ENABLED", False),
+            sites=_env_list("CRAIGSLIST_SITES", ["miami"]),
         )
 
 
@@ -280,6 +311,9 @@ class BuildingCriteria:
     #: Amenity categories that are mandatory, not merely counted. A listing
     #: missing any of these fails outright even if it clears the count.
     required_amenities: list[str] = field(default_factory=list)
+    #: When True, a listing whose source published no description is rejected
+    #: rather than flagged. Leave False to keep structured feeds usable.
+    require_amenity_evidence: bool = False
 
 
 @dataclass
@@ -383,6 +417,7 @@ class Settings:
     realtyapi: RealtyApiSettings
     scrapingbee: ScrapingBeeSettings
     rentcast: RentCastSettings
+    craigslist: CraigslistSettings
     housecanary: HouseCanarySettings
     county: CountySettings
     alerts: AlertSettings
@@ -411,6 +446,7 @@ class Settings:
             realtyapi=RealtyApiSettings.from_env(),
             scrapingbee=ScrapingBeeSettings.from_env(),
             rentcast=RentCastSettings.from_env(),
+            craigslist=CraigslistSettings.from_env(),
             housecanary=HouseCanarySettings.from_env(),
             county=CountySettings.from_env(),
             alerts=AlertSettings.from_env(),
@@ -429,7 +465,9 @@ class Settings:
             "rapidapi": self.rapidapi.enabled,
             "realtyapi": self.realtyapi.enabled,
             "scrapingbee": self.scrapingbee.enabled,
-            "rentcast": self.rentcast.enabled,
+            "rentcast_avm": self.rentcast.enabled,
+            "rentcast_listings": self.rentcast.enabled and self.rentcast.use_as_listing_source,
+            "craigslist": self.craigslist.enabled,
             "housecanary": self.housecanary.enabled,
             "county_assessor": self.county.enabled,
             "alert_discord": bool(self.alerts.discord_webhook_url),
@@ -439,10 +477,16 @@ class Settings:
 
     def warnings(self) -> list[str]:
         issues = []
-        if not (self.rapidapi.enabled or self.realtyapi.enabled):
+        has_primary = (
+            self.rapidapi.enabled
+            or self.realtyapi.enabled
+            or (self.rentcast.enabled and self.rentcast.use_as_listing_source)
+            or self.craigslist.enabled
+        )
+        if not has_primary:
             issues.append(
-                "No primary listing API configured (RAPIDAPI_KEY / REALTYAPI_KEY); "
-                "ingestion will rely entirely on the ScrapingBee fallback."
+                "No listing source configured. Cheapest first: CRAIGSLIST_ENABLED=true "
+                "(no key at all), then RENTCAST_API_KEY (free tier), then RAPIDAPI_KEY."
             )
         if not self.scrapingbee.enabled:
             issues.append(
@@ -478,6 +522,7 @@ def _load_criteria(path: Path) -> tuple[SearchCriteria, PipelineCriteria]:
             str(k): list(v or []) for k, v in (raw_building.get("luxury_amenities") or {}).items()
         },
         required_amenities=[str(a) for a in (raw_building.get("required_amenities") or [])],
+        require_amenity_evidence=bool(raw_building.get("require_amenity_evidence", False)),
     )
 
     search = SearchCriteria(

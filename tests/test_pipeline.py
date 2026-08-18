@@ -32,6 +32,11 @@ def wired(settings, tmp_path):
     settings.http.rate_limit_seconds = 0.0
     settings.county.enabled = False
     settings.pipeline.enrichment.rentcast = False
+    # These tests exercise the wrapper -> staleness -> scraper path specifically.
+    # The free sources are primaries in their own right and would otherwise
+    # count toward source health here; they have their own suite.
+    settings.rentcast.use_as_listing_source = False
+    settings.craigslist.enabled = False
     settings.search.zip_codes = ["33154"]           # one ZIP keeps mocks simple
     return settings
 

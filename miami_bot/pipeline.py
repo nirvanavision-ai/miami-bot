@@ -30,8 +30,10 @@ from .enrich.enricher import Enricher
 from .filters import FilterStats, evaluate
 from .models import Listing, MatchResult, utcnow
 from .sources.base import ListingSource, SourceResult
+from .sources.craigslist import CraigslistSource
 from .sources.rapidapi import build_rapidapi_sources
 from .sources.realtyapi import RealtyApiSource
+from .sources.rentcast_listings import RentCastListingsSource
 from .sources.scrapingbee import ScrapingBeeSource
 from .util.http import HttpClient
 from .util.logging import get_logger
@@ -108,6 +110,15 @@ class Pipeline:
         self.primary_sources: list[ListingSource] = [
             *build_rapidapi_sources(self.http, settings.rapidapi),
             RealtyApiSource(self.http, settings.realtyapi),
+            RentCastListingsSource(
+                self.http, settings.rentcast,
+                enabled=settings.rentcast.use_as_listing_source,
+            ),
+            CraigslistSource(
+                self.http,
+                enabled=settings.craigslist.enabled,
+                sites=settings.craigslist.sites,
+            ),
         ]
         self.fallback_source = ScrapingBeeSource(self.http, settings.scrapingbee)
 
