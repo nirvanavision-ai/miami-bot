@@ -37,7 +37,9 @@ Zero dependencies, zero build step, zero audio assets. Open
   the bottle spins and tilts, with spring-damper slosh, waves, GL-point
   bubbles, a cork that pops off during pours, and a projected 2D overlay
   for pour streams, droplets, and confetti. Falls back to a flat 2D bottle
-  without WebGL. Pink-studio palette with blue accents; custom cursor,
+  without WebGL. Candlelit Don Julio palette — near-black ground, amber liquid, gold
+  accents — over a generative cinematic background (drifting candle glows,
+  smoke wisps, gold dust) rendered on canvas; custom cursor,
   magnetic buttons, liquid-fill intro. `prefers-reduced-motion` disables
   ambient animation and the idle spin.
 - **No trademark trade dress**: the bottle silhouette and mark are original;
