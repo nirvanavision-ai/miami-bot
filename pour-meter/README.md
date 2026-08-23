@@ -29,9 +29,13 @@ Zero dependencies, zero build step, zero audio assets. Open
 - **Audio**: all SFX (cork pop, pour, clink, glug, fanfare) are synthesized live
   with the Web Audio API — no asset files. Audio unlocks on first user gesture
   per browser autoplay policy; mute toggle persists.
-- **Rendering**: SVG bottle with a clip-path liquid layer (CSS wave drift,
-  rAF-eased level transitions) plus a canvas particle layer for completion
-  bursts. `prefers-reduced-motion` disables ambient animation.
+- **Rendering**: a canvas liquid simulation clipped to a Don Julio-style
+  tapered-cone silhouette — a spring-mesh surface heightfield that sloshes
+  from cursor movement and device tilt, pour streams with droplets that
+  splash back into the surface, glug bubbles on drains, foam, speculars,
+  and confetti bursts. Custom cursor, magnetic buttons, and a liquid-fill
+  intro sequence round out the motion design (pink/blue palette).
+  `prefers-reduced-motion` disables all ambient animation.
 - **No trademark trade dress**: the bottle silhouette and mark are original;
   "1942" is used as a number.
 
