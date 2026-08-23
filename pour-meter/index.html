@@ -1,0 +1,779 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The 1942 Pour Meter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Marcellus&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root{
+    --ground:#0d0b08; --panel:#151109; --panel-2:#1b160c; --panel-3:#211a0e;
+    --ink:#e9e1d1; --ink-dim:#a2967f; --ink-faint:#6f6552;
+    --gold:#d2a04c; --gold-bright:#f0c97a; --gold-deep:#8a6a2c;
+    --hairline:rgba(210,160,76,.22); --hairline-faint:rgba(210,160,76,.11);
+    --ember:#c05a33; --ember-dim:#8a3c22;
+    --ok:#9ab06a;
+    --serif:"Source Serif 4",Georgia,serif;
+    --display:"Marcellus",Georgia,serif;
+    --mono:"IBM Plex Mono",Consolas,monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    background:
+      radial-gradient(120% 70% at 50% -10%, rgba(210,160,76,.08), transparent 55%),
+      var(--ground);
+    color:var(--ink); font-family:var(--serif); font-size:16px; line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+  input,select{font:inherit;color:var(--ink)}
+  a{color:var(--gold-bright)}
+  :focus-visible{outline:2px solid var(--gold-bright);outline-offset:2px}
+  .mono{font-family:var(--mono)}
+
+  .wrap{max-width:1120px;margin:0 auto;padding:0 20px}
+
+  /* ---------- header ---------- */
+  header.top{border-bottom:1px solid var(--hairline);padding:18px 0;position:relative;z-index:5;background:transparent}
+  .top-row{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .brand{display:flex;align-items:baseline;gap:12px}
+  .brand h1{font-family:var(--display);font-weight:400;font-size:26px;letter-spacing:.02em;white-space:nowrap}
+  .brand h1 b{color:var(--gold-bright);font-weight:400}
+  .brand .date{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-dim)}
+  .top-spacer{flex:1}
+  .chip{
+    font-family:var(--mono);font-size:11.5px;letter-spacing:.06em;
+    border:1px solid var(--hairline);padding:7px 12px;color:var(--ink-dim);
+    display:inline-flex;gap:8px;align-items:center;white-space:nowrap;background:var(--panel);
+  }
+  .chip b{color:var(--gold-bright);font-weight:500}
+  button.chip:hover{border-color:var(--gold-deep);color:var(--ink)}
+
+  /* ---------- layout ---------- */
+  main{padding:28px 0 40px}
+  .grid{display:grid;gap:26px;grid-template-columns:1fr}
+  @media(min-width:980px){
+    .grid{grid-template-columns:360px 1fr;align-items:start}
+    .bottle-panel{position:sticky;top:20px}
+  }
+
+  .panel{border:1px solid var(--hairline);background:var(--panel)}
+  .panel-head{
+    display:flex;align-items:baseline;gap:12px;justify-content:space-between;
+    padding:14px 18px;border-bottom:1px solid var(--hairline-faint);
+    background:linear-gradient(180deg,var(--panel-2),var(--panel));
+  }
+  .panel-head h2{font-family:var(--display);font-weight:400;font-size:18px;letter-spacing:.03em}
+  .panel-head .sub{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-deep)}
+
+  /* ---------- bottle ---------- */
+  .bottle-panel .stage{position:relative;display:flex;justify-content:center;padding:26px 10px 8px}
+  .stage svg.bottle{display:block}
+  #fx{position:absolute;inset:0;pointer-events:none}
+  .gauge{position:absolute;right:14px;top:26px;bottom:70px;display:flex;flex-direction:column-reverse;justify-content:space-between;text-align:right}
+  .gauge span{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint)}
+  .gauge span.hit{color:var(--gold-bright)}
+  .readout{text-align:center;padding:0 18px 6px}
+  .readout .pct{font-family:var(--display);font-size:52px;color:var(--gold-bright);line-height:1;font-variant-numeric:tabular-nums}
+  .readout .pct small{font-size:24px;color:var(--gold-deep)}
+  .readout .status{font-style:italic;color:var(--ink-dim);font-size:14.5px;margin-top:6px;min-height:22px}
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--hairline-faint);margin-top:14px}
+  .stat{padding:12px 8px;text-align:center;border-right:1px solid var(--hairline-faint)}
+  .stat:last-child{border-right:none}
+  .stat b{display:block;font-family:var(--mono);font-size:17px;color:var(--ink);font-weight:500;font-variant-numeric:tabular-nums}
+  .stat span{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint)}
+
+  /* cellar */
+  .cellar{padding:14px 18px 18px}
+  .cellar h3{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold-deep);margin-bottom:12px}
+  .shelf{display:flex;gap:10px;align-items:flex-end;border-bottom:2px solid var(--gold-deep);padding-bottom:2px}
+  .mini{flex:1;max-width:34px;text-align:center}
+  .mini .glass{position:relative;height:56px;border:1px solid var(--hairline);border-top-width:0;background:rgba(0,0,0,.25)}
+  .mini .glass::before{content:"";position:absolute;top:-7px;left:50%;width:8px;height:7px;transform:translateX(-50%);border:1px solid var(--hairline);border-bottom:none}
+  .mini .liq{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(180deg,var(--gold-bright),#a9711f)}
+  .mini.today .glass{border-color:var(--gold)}
+  .mini .d{font-family:var(--mono);font-size:9px;color:var(--ink-faint);margin-top:5px;text-transform:uppercase}
+  .mini .star{position:absolute;top:2px;left:0;right:0;font-size:9px;color:var(--gold-bright)}
+
+  /* ---------- timeline ---------- */
+  .timeline{padding:16px 18px 14px}
+  .tl-track{position:relative;height:34px;border:1px solid var(--hairline-faint);background:rgba(0,0,0,.25)}
+  .tl-block{position:absolute;top:0;bottom:0;background:rgba(210,160,76,.14);border-left:1px solid var(--gold-deep);border-right:1px solid var(--gold-deep);overflow:hidden}
+  .tl-block i{position:absolute;left:6px;top:50%;transform:translateY(-50%);font-style:normal;font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);white-space:nowrap}
+  .tl-block.past{background:rgba(255,255,255,.03);border-color:var(--ink-faint)}
+  .tl-block.past i{color:var(--ink-faint)}
+  .tl-block.live{background:rgba(210,160,76,.28)}
+  .tl-now{position:absolute;top:-5px;bottom:-5px;width:2px;background:var(--gold-bright);box-shadow:0 0 8px rgba(240,201,122,.8)}
+  .tl-scale{display:flex;justify-content:space-between;font-family:var(--mono);font-size:9px;color:var(--ink-faint);margin-top:6px}
+
+  /* ---------- current block banner ---------- */
+  .nowline{display:flex;align-items:center;gap:14px;padding:13px 18px;border-top:1px solid var(--hairline-faint);flex-wrap:wrap}
+  .nowline .lbl{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold-deep)}
+  .nowline .cur{font-family:var(--display);font-size:17px}
+  .nowline .count{font-family:var(--mono);font-size:13px;color:var(--gold-bright);font-variant-numeric:tabular-nums;margin-left:auto}
+  .nowline.lastcall .count{color:var(--ember);animation:pulse 1.2s ease-in-out infinite}
+  @keyframes pulse{50%{opacity:.45}}
+
+  /* ---------- blocks & tasks ---------- */
+  .blocklist{display:flex;flex-direction:column}
+  .block{border-top:1px solid var(--hairline-faint)}
+  .block:first-child{border-top:none}
+  .block-head{display:flex;align-items:center;gap:12px;padding:12px 18px;background:linear-gradient(180deg,rgba(210,160,76,.05),transparent)}
+  .block-head .t{font-family:var(--display);font-size:16.5px;letter-spacing:.02em}
+  .block-head .time{font-family:var(--mono);font-size:11px;color:var(--ink-dim);letter-spacing:.06em}
+  .block-head .cd{font-family:var(--mono);font-size:11px;color:var(--gold-bright);margin-left:auto;font-variant-numeric:tabular-nums}
+  .block.ended .block-head .t,.block.ended .block-head .time{color:var(--ink-faint)}
+  .block.ended .block-head .cd{color:var(--ink-faint)}
+  .block.lastcall{border-left:2px solid var(--ember)}
+  .block.lastcall .cd{color:var(--ember);animation:pulse 1.2s ease-in-out infinite}
+  .block-head .del{color:var(--ink-faint);font-family:var(--mono);font-size:14px;padding:2px 6px}
+  .block-head .del:hover{color:var(--ember)}
+
+  ul.tasks{list-style:none}
+  .task{display:flex;align-items:center;gap:13px;padding:9px 18px 9px 26px}
+  .task + .task{border-top:1px dashed var(--hairline-faint)}
+  .tick{
+    width:21px;height:21px;flex:none;border:1.5px solid var(--gold-deep);border-radius:50%;
+    display:inline-flex;align-items:center;justify-content:center;
+    color:transparent;font-size:12px;background:transparent;transition:all .18s;
+  }
+  .tick:hover{border-color:var(--gold-bright)}
+  .task.done .tick{background:var(--gold);border-color:var(--gold);color:var(--ground)}
+  .task .title{flex:1;font-size:15.5px}
+  .task.done .title{color:var(--ink-dim);text-decoration:line-through;text-decoration-color:var(--gold-deep)}
+  .task.spilled .title{color:var(--ink-faint);text-decoration:line-through;text-decoration-color:var(--ember-dim)}
+  .badge{font-family:var(--mono);font-size:8.5px;letter-spacing:.14em;padding:3px 7px;text-transform:uppercase;flex:none}
+  .badge.rit{color:var(--gold);border:1px solid var(--gold-deep)}
+  .badge.spill{color:var(--ember);border:1px solid var(--ember-dim)}
+  .badge.share{color:var(--ink-faint)}
+  .task .del{color:var(--ink-faint);font-size:14px;padding:2px 6px;opacity:0;transition:opacity .15s}
+  .task:hover .del{opacity:1}
+  .task .del:hover{color:var(--ember)}
+  .empty-tasks{padding:10px 18px 12px 26px;color:var(--ink-faint);font-style:italic;font-size:14px}
+
+  /* add forms */
+  .addbar{display:flex;gap:10px;padding:16px 18px;border-top:1px solid var(--hairline);flex-wrap:wrap;background:var(--panel-2)}
+  .addbar input[type=text]{
+    flex:1;min-width:180px;background:var(--ground);border:1px solid var(--hairline);
+    padding:10px 13px;font-family:var(--serif);font-size:15px;
+  }
+  .addbar input::placeholder{color:var(--ink-faint);font-style:italic}
+  .addbar select,.addbar input[type=time]{
+    background:var(--ground);border:1px solid var(--hairline);padding:10px 10px;
+    font-family:var(--mono);font-size:12.5px;color:var(--ink-dim);
+  }
+  .addbar label.rit{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:11px;color:var(--ink-dim);letter-spacing:.06em;cursor:pointer}
+  .addbar label.rit input{accent-color:var(--gold)}
+  .btn{
+    font-family:var(--mono);font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;
+    background:var(--gold);color:var(--ground);padding:10px 18px;font-weight:500;
+  }
+  .btn:hover{background:var(--gold-bright)}
+  .btn.ghost{background:transparent;color:var(--gold);border:1px solid var(--gold-deep)}
+  .btn.ghost:hover{color:var(--gold-bright);border-color:var(--gold)}
+
+  .blockadd{display:none}
+  .blockadd.open{display:flex}
+
+  /* ---------- empty state ---------- */
+  .empty{padding:44px 24px;text-align:center}
+  .empty h3{font-family:var(--display);font-weight:400;font-size:24px;margin-bottom:8px}
+  .empty p{color:var(--ink-dim);max-width:44ch;margin:0 auto 20px;font-style:italic}
+
+  /* ---------- toasts ---------- */
+  #toasts{position:fixed;top:16px;right:16px;z-index:50;display:flex;flex-direction:column;gap:10px;max-width:min(360px,calc(100vw - 32px))}
+  .toast{
+    border:1px solid var(--gold-deep);background:linear-gradient(180deg,#221a0d,#171208);
+    padding:13px 16px;box-shadow:0 8px 30px rgba(0,0,0,.55);
+    animation:toastIn .35s cubic-bezier(.2,.9,.3,1.2);
+  }
+  .toast .who{font-family:var(--mono);font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--gold-deep);margin-bottom:4px}
+  .toast .msg{font-style:italic;font-size:14.5px;line-height:1.45}
+  .toast.bad{border-color:var(--ember-dim)}
+  .toast.bad .who{color:var(--ember)}
+  .toast.out{animation:toastOut .3s forwards}
+  @keyframes toastIn{from{transform:translateX(30px);opacity:0}}
+  @keyframes toastOut{to{transform:translateX(30px);opacity:0}}
+
+  footer.app{padding:10px 0 34px;display:flex;gap:18px;justify-content:center;flex-wrap:wrap}
+  footer.app button{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint)}
+  footer.app button:hover{color:var(--ink-dim)}
+
+  @keyframes waveDrift{from{transform:translateX(0)}to{transform:translateX(-120px)}}
+  .wave{animation:waveDrift 3s linear infinite}
+  @media (prefers-reduced-motion:reduce){.wave,.nowline.lastcall .count,.block.lastcall .cd{animation:none}}
+</style>
+
+<header class="top"><div class="wrap top-row">
+  <div class="brand">
+    <h1>The <b>1942</b> Pour Meter</h1>
+    <span class="date" id="dateLbl"></span>
+  </div>
+  <div class="top-spacer"></div>
+  <span class="chip" title="Consecutive days at or above the 80% goal">STREAK <b id="streakLbl">0</b></span>
+  <span class="chip">BEST <b id="bestLbl">0</b></span>
+  <button class="chip" id="muteBtn" aria-label="Toggle sound">SOUND <b id="muteState">ON</b></button>
+</div></header>
+
+<main class="wrap"><div class="grid">
+
+  <!-- ========= bottle ========= -->
+  <section class="panel bottle-panel" aria-label="Bottle">
+    <div class="stage">
+      <svg class="bottle" width="190" height="380" viewBox="0 0 190 380" role="img" aria-label="Bottle fill level">
+        <defs>
+          <linearGradient id="liqGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#f0c97a"/><stop offset="1" stop-color="#a06a1c"/>
+          </linearGradient>
+          <clipPath id="clipB">
+            <path d="M80 34 h30 v40 c0 12 20 20 23 36 l5 214 c0 22 -12 30 -43 30 s-43 -8 -43 -30 l5 -214 c3 -16 23 -24 23 -36 z"/>
+          </clipPath>
+        </defs>
+        <g clip-path="url(#clipB)">
+          <rect x="0" y="0" width="190" height="380" fill="#14100a"/>
+          <g id="liquid">
+            <g class="wave">
+              <path fill="url(#liqGrad)" d="M-120 8 q30 -10 60 0 t60 0 t60 0 t60 0 t60 0 t60 0 V500 H-120 Z"/>
+            </g>
+          </g>
+        </g>
+        <path d="M80 34 h30 v40 c0 12 20 20 23 36 l5 214 c0 22 -12 30 -43 30 s-43 -8 -43 -30 l5 -214 c3 -16 23 -24 23 -36 z"
+              fill="none" stroke="#d2a04c" stroke-width="1.8"/>
+        <rect x="77" y="16" width="36" height="18" fill="none" stroke="#d2a04c" stroke-width="1.8"/>
+        <line x1="60" y1="238" x2="130" y2="238" stroke="#8a6a2c" stroke-width=".8" opacity=".55"/>
+        <text x="95" y="256" text-anchor="middle" font-family="Marcellus,serif" font-size="16" fill="#d2a04c" letter-spacing="3">1942</text>
+      </svg>
+      <canvas id="fx" width="380" height="760"></canvas>
+      <div class="gauge" aria-hidden="true">
+        <span data-m="0">Dry</span><span data-m="25">Reposado</span><span data-m="50">Añejo</span><span data-m="75">Extra Añejo</span><span data-m="100">1942</span>
+      </div>
+    </div>
+    <div class="readout">
+      <div class="pct"><span id="pctLbl">0</span><small>%</small></div>
+      <div class="status" id="statusLbl">The bottle stands empty.</div>
+    </div>
+    <div class="stats">
+      <div class="stat"><b id="stDone">0/0</b><span>Poured</span></div>
+      <div class="stat"><b id="stSpill">0</b><span>Spilled</span></div>
+      <div class="stat"><b id="stLeft">—</b><span>Next deadline</span></div>
+    </div>
+    <div class="cellar">
+      <h3>The Cellar — last 7 nights</h3>
+      <div class="shelf" id="shelf"></div>
+    </div>
+  </section>
+
+  <!-- ========= day ========= -->
+  <section class="panel" aria-label="Today">
+    <div class="panel-head">
+      <h2>Today’s Service</h2>
+      <span class="sub" id="blockCountLbl"></span>
+    </div>
+
+    <div class="timeline">
+      <div class="tl-track" id="tlTrack"></div>
+      <div class="tl-scale"><span>6:00</span><span>10:00</span><span>14:00</span><span>18:00</span><span>22:00</span><span>24:00</span></div>
+    </div>
+
+    <div class="nowline" id="nowline">
+      <span class="lbl">Now pouring</span>
+      <span class="cur" id="curBlockLbl">—</span>
+      <span class="count" id="curCountLbl"></span>
+    </div>
+
+    <div id="dayBody"></div>
+
+    <div class="addbar" id="taskAdd">
+      <input type="text" id="tTitle" placeholder="What must be finished, darling?" maxlength="120" aria-label="Task title">
+      <select id="tBlock" aria-label="Time block"></select>
+      <label class="rit"><input type="checkbox" id="tRitual"> DAILY RITUAL</label>
+      <button class="btn" id="tAddBtn">Pour it in</button>
+    </div>
+
+    <div class="addbar blockadd" id="blockAdd">
+      <input type="text" id="bLabel" placeholder="Block name — e.g. Deep Work" maxlength="40" aria-label="Block name">
+      <input type="time" id="bStart" value="09:00" aria-label="Start time">
+      <input type="time" id="bEnd" value="11:00" aria-label="End time">
+      <button class="btn" id="bAddBtn">Add block</button>
+    </div>
+    <div class="addbar" style="border-top:none;padding-top:0">
+      <button class="btn ghost" id="blockToggle">+ Time block</button>
+      <button class="btn ghost" id="seedBtn" style="display:none">Pour a sample day</button>
+    </div>
+  </section>
+
+</div></main>
+
+<footer class="app wrap">
+  <button id="demoBtn">Preview the tragedy (demo a spill)</button>
+  <button id="resetBtn">Restock today’s bottle</button>
+</footer>
+
+<div id="toasts" aria-live="polite"></div>
+
+<script>
+'use strict';
+(function(){
+
+/* ================= utilities ================= */
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad = n => String(n).padStart(2,'0');
+const todayKey = () => { const d=new Date(); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); };
+const minsNow = () => { const d=new Date(); return d.getHours()*60+d.getMinutes()+d.getSeconds()/60; };
+const toMins = hm => { const [h,m]=hm.split(':').map(Number); return h*60+m; };
+const fmtHM = hm => { let [h,m]=hm.split(':').map(Number); const ap=h>=12?'pm':'am'; h=h%12||12; return h+(m?':'+pad(m):'')+ap; };
+const uid = () => Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ================= state ================= */
+const KEY='pourmeter.v1';
+const GOAL=80;
+let S=null;
+
+function defaults(){
+  return { version:1, dayKey:todayKey(), blocks:[], tasks:[], history:[],
+           streak:{current:0,best:0}, settings:{muted:false} };
+}
+function load(){
+  try{ const raw=localStorage.getItem(KEY); if(raw){ const p=JSON.parse(raw); if(p&&p.version===1) return p; } }
+  catch(e){}
+  return null;
+}
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
+
+/* ================= day math ================= */
+const dayTasks = () => S.tasks;
+function share(){ const n=dayTasks().length; return n? 100/n : 0; }
+function pct(){
+  const n=dayTasks().length; if(!n) return 0;
+  return dayTasks().filter(t=>t.done&&!t.spilled).length / n * 100;
+}
+function spilledPct(){
+  const n=dayTasks().length; if(!n) return 0;
+  return dayTasks().filter(t=>t.spilled).length / n * 100;
+}
+function blockById(id){ return S.blocks.find(b=>b.id===id)||null; }
+function blockEnded(b){ return toMins(b.end) <= minsNow(); }
+function blockLive(b){ const m=minsNow(); return toMins(b.start)<=m && m<toMins(b.end); }
+function sortedBlocks(){ return S.blocks.slice().sort((a,b)=>toMins(a.start)-toMins(b.start)); }
+
+function rollDayIfNeeded(){
+  if(S.dayKey===todayKey()) return;
+  // archive the finished day
+  const n=S.tasks.length;
+  const donePct = n? Math.round(S.tasks.filter(t=>t.done&&!t.spilled).length/n*100) : 0;
+  if(n){
+    S.history.push({dayKey:S.dayKey, pct:donePct, full:donePct===100});
+    if(S.history.length>30) S.history=S.history.slice(-30);
+    if(donePct>=GOAL){ S.streak.current++; S.streak.best=Math.max(S.streak.best,S.streak.current); }
+    else S.streak.current=0;
+  }
+  // fresh bottle: rituals return, the rest is history
+  S.tasks = S.tasks.filter(t=>t.recurring).map(t=>({...t, done:false, spilled:false, doneAt:null}));
+  S.dayKey = todayKey();
+  save();
+}
+
+/* ================= audio (all synthesized — zero assets) ================= */
+let AC=null, master=null;
+function audio(){
+  if(S.settings.muted) return null;
+  try{
+    if(!AC){ AC=new (window.AudioContext||window.webkitAudioContext)(); master=AC.createGain(); master.gain.value=.7; master.connect(AC.destination); }
+    if(AC.state==='suspended') AC.resume();
+    return AC;
+  }catch(e){ return null; }
+}
+function env(g,t0,a,peak,rel){ g.gain.setValueAtTime(0.0001,t0); g.gain.exponentialRampToValueAtTime(peak,t0+a); g.gain.exponentialRampToValueAtTime(0.0001,t0+rel); }
+function noiseBuf(ac,sec){ const b=ac.createBuffer(1,ac.sampleRate*sec,ac.sampleRate), d=b.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1; return b; }
+
+function sfxClink(){ const ac=audio(); if(!ac) return; const t=ac.currentTime;
+  [[2530,.0018],[3790,.0012],[5100,.0007]].forEach(([f,v],i)=>{
+    const o=ac.createOscillator(),g=ac.createGain(); o.type='sine'; o.frequency.value=f*(1+i*.001);
+    env(g,t,.005,v*90,.5+i*.1); o.connect(g).connect(master); o.start(t); o.stop(t+.8);
+  });
+}
+function sfxPour(){ const ac=audio(); if(!ac) return; const t=ac.currentTime;
+  const src=ac.createBufferSource(); src.buffer=noiseBuf(ac,.7);
+  const bp=ac.createBiquadFilter(); bp.type='bandpass'; bp.Q.value=1.1;
+  bp.frequency.setValueAtTime(500,t); bp.frequency.exponentialRampToValueAtTime(1600,t+.55);
+  const g=ac.createGain(); env(g,t,.06,.16,.68);
+  src.connect(bp).connect(g).connect(master); src.start(t);
+  const o=ac.createOscillator(),og=ac.createGain(); o.type='sine';
+  o.frequency.setValueAtTime(180,t); o.frequency.exponentialRampToValueAtTime(320,t+.5);
+  env(og,t,.05,.05,.6); o.connect(og).connect(master); o.start(t); o.stop(t+.7);
+}
+function sfxGlug(n){ const ac=audio(); if(!ac) return; const t0=ac.currentTime; n=n||4;
+  for(let i=0;i<n;i++){ const t=t0+i*.17;
+    const o=ac.createOscillator(),g=ac.createGain(); o.type='sine';
+    o.frequency.setValueAtTime(230-i*18,t); o.frequency.exponentialRampToValueAtTime(90,t+.13);
+    env(g,t,.012,.4,.16); o.connect(g).connect(master); o.start(t); o.stop(t+.2);
+  }
+  const src=ac.createBufferSource(); src.buffer=noiseBuf(ac,.3);
+  const lp=ac.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=900;
+  const g=ac.createGain(); env(g,t0+n*.17,.02,.12,.3);
+  src.connect(lp).connect(g).connect(master); src.start(t0+n*.17);
+}
+function sfxCork(){ const ac=audio(); if(!ac) return; const t=ac.currentTime;
+  const o=ac.createOscillator(),g=ac.createGain(); o.type='sine';
+  o.frequency.setValueAtTime(400,t); o.frequency.exponentialRampToValueAtTime(120,t+.09);
+  env(g,t,.004,.7,.12); o.connect(g).connect(master); o.start(t); o.stop(t+.15);
+  const s=ac.createBufferSource(); s.buffer=noiseBuf(ac,.06); const hg=ac.createGain();
+  env(hg,t,.002,.15,.06); s.connect(hg).connect(master); s.start(t);
+}
+function sfxFanfare(){ const ac=audio(); if(!ac) return; const t0=ac.currentTime;
+  [440,554.4,659.3,880].forEach((f,i)=>{ const t=t0+i*.12;
+    const o=ac.createOscillator(),g=ac.createGain(); o.type='triangle'; o.frequency.value=f;
+    env(g,t,.02,.22,.55); o.connect(g).connect(master); o.start(t); o.stop(t+.7);
+  });
+  setTimeout(sfxClink,520);
+}
+
+/* ================= toasts ================= */
+const LINES={
+  pour:["Magnificent. The ’42 breathes.","A generous pour. The room approves.","Santé. Another finger of gold.","The maître d’ nods, almost imperceptibly.","Poured like you’ve done this before."],
+  spill:["A tragedy in amber. The staff cannot watch.","That was a two-hundred-dollar pour, darling.","Glug, glug… gone. How gauche.","The sommelier has stepped out to compose himself.","Somewhere, an agave farmer weeps."],
+  late:["Noted for the record — but the pour is gone. Punctuality, darling.","Done, at last. The ice, however, has melted."],
+  full:["Bottle finished. Owner’s Table tonight.","A perfect service. The house applauds.","Not a drop wasted. Extraordinary."],
+  lastcall:["Last call for “{b}” — {n} still on the tray.","The “{b}” block closes shortly. {n} unfinished, darling."]
+};
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+function toast(msg,bad,who){
+  const box=$('toasts'), el=document.createElement('div');
+  el.className='toast'+(bad?' bad':'');
+  el.innerHTML='<div class="who">'+(who||'The Maître d’')+'</div><div class="msg">'+esc(msg)+'</div>';
+  box.appendChild(el);
+  setTimeout(()=>{ el.classList.add('out'); setTimeout(()=>el.remove(),320); },6200);
+  while(box.children.length>4) box.firstChild.remove();
+}
+
+/* ================= bottle rendering ================= */
+/* liquid interior: y=78 (full) .. y=344 (empty floor) inside the 380-high viewBox */
+const LIQ_TOP=78, LIQ_BOT=344;
+let displayPct=0, targetPct=0, demoDip=0;
+const liquid=$('liquid')?document.getElementById('liquid'):null;
+
+function setTarget(p){ targetPct=Math.max(0,Math.min(100,p)); }
+function liquidY(p){ return LIQ_BOT-(LIQ_BOT-LIQ_TOP)*(p/100); }
+
+/* particles */
+const fx=$('fx'), fctx=fx.getContext('2d');
+let sparks=[];
+function sizeFx(){ const r=fx.getBoundingClientRect(); fx.width=r.width*2; fx.height=r.height*2; }
+addEventListener('resize',sizeFx);
+function burst(big){
+  if(reduceMotion) return;
+  sizeFx();
+  const r=fx.getBoundingClientRect();
+  const cx=fx.width/2, cy=(30/380)*fx.height; /* bottle mouth */
+  const n=big?90:34;
+  for(let i=0;i<n;i++){
+    const a=-Math.PI/2+(Math.random()-.5)*1.6, v=(big?7:4.5)*(.5+Math.random());
+    sparks.push({x:cx,y:cy,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life:1,sz:2+Math.random()*3.4});
+  }
+}
+function frame(){
+  /* liquid easing */
+  const diff=targetPct-demoDip-displayPct;
+  displayPct+=diff*(diff>0?.045:.03);
+  if(Math.abs(diff)<.05) displayPct=targetPct-demoDip;
+  if(demoDip>0) demoDip=Math.max(0,demoDip-.12);
+  const g=document.getElementById('liquid');
+  if(g) g.setAttribute('transform','translate(0,'+liquidY(displayPct).toFixed(2)+')');
+  /* sparks */
+  fctx.clearRect(0,0,fx.width,fx.height);
+  sparks=sparks.filter(s=>s.life>0);
+  for(const s of sparks){
+    s.x+=s.vx; s.y+=s.vy; s.vy+=.16; s.life-=.016;
+    fctx.globalAlpha=Math.max(0,s.life);
+    fctx.fillStyle=Math.random()<.3?'#f0c97a':'#d2a04c';
+    fctx.beginPath(); fctx.arc(s.x,s.y,s.sz*s.life,0,7); fctx.fill();
+  }
+  fctx.globalAlpha=1;
+  requestAnimationFrame(frame);
+}
+
+/* ================= actions ================= */
+function addTask(title,blockId,recurring){
+  S.tasks.push({id:uid(),title,blockId:blockId||null,recurring:!!recurring,done:false,spilled:false,doneAt:null});
+  save(); renderAll();
+}
+function completeTask(id){
+  const t=S.tasks.find(x=>x.id===id); if(!t) return;
+  if(t.done){ t.done=false; t.doneAt=null; save(); renderAll(); return; } /* allow un-tick */
+  t.done=true; t.doneAt=Date.now();
+  save();
+  if(t.spilled){ toast(pick(LINES.late),true); }
+  else{
+    if(S.tasks.filter(x=>x.done&&!x.spilled).length===1) sfxCork();
+    sfxPour(); setTimeout(sfxClink,420); burst(false);
+    toast(pick(LINES.pour));
+    if(pct()>=100){ setTimeout(()=>{ sfxFanfare(); burst(true); toast(pick(LINES.full),false,'The House'); },600); }
+  }
+  renderAll();
+}
+function deleteTask(id){ S.tasks=S.tasks.filter(t=>t.id!==id); save(); renderAll(); }
+
+function spillSweep(silent){
+  const m=minsNow(); let hit=[];
+  for(const t of S.tasks){
+    if(t.done||t.spilled||!t.blockId) continue;
+    const b=blockById(t.blockId);
+    if(b && toMins(b.end)<=m){ t.spilled=true; hit.push(t); }
+  }
+  if(hit.length){
+    save();
+    if(silent){ sfxGlug(3); toast('While you were away, the angels took '+hit.length+' pour'+(hit.length>1?'s':'')+'.',true,'The Angels'); }
+    else{ sfxGlug(4+Math.min(3,hit.length)); toast(pick(LINES.spill),true); }
+    renderAll();
+  }
+  return hit.length;
+}
+
+/* last-call warnings, once per block per session-day */
+const warned=new Set();
+function lastCallSweep(){
+  const m=minsNow();
+  for(const b of S.blocks){
+    const open=S.tasks.filter(t=>t.blockId===b.id&&!t.done&&!t.spilled).length;
+    const left=toMins(b.end)-m;
+    if(open>0 && left>0 && left<=15 && !warned.has(S.dayKey+b.id)){
+      warned.add(S.dayKey+b.id);
+      sfxClink();
+      toast(pick(LINES.lastcall).replace('{b}',b.label).replace('{n}',open+' task'+(open>1?'s':'')),true,'Last Call');
+    }
+  }
+}
+
+/* ================= rendering ================= */
+function statusLine(p){
+  if(!S.tasks.length) return 'The bottle stands empty. Plan the day.';
+  if(p>=100) return 'Finished to the last drop. Owner’s Table.';
+  if(p>=75) return 'Extra Añejo territory. Keep pouring.';
+  if(p>=50) return 'Half the bottle gleams. Respectable.';
+  if(p>=25) return 'A promising start, darling.';
+  if(spilledPct()>0) return 'There has been… an incident.';
+  return 'The evening is young. So is the pour.';
+}
+
+function renderBottle(){
+  const p=pct();
+  setTarget(p);
+  $('pctLbl').textContent=Math.round(p);
+  $('statusLbl').textContent=statusLine(p);
+  const n=S.tasks.length;
+  $('stDone').textContent=S.tasks.filter(t=>t.done&&!t.spilled).length+'/'+n;
+  $('stSpill').textContent=S.tasks.filter(t=>t.spilled).length;
+  document.querySelectorAll('.gauge span').forEach(s=>{
+    s.classList.toggle('hit', p>=+s.dataset.m && +s.dataset.m>0);
+  });
+  /* next deadline */
+  const m=minsNow(); let next=null;
+  for(const b of sortedBlocks()){
+    const open=S.tasks.some(t=>t.blockId===b.id&&!t.done&&!t.spilled);
+    if(open&&toMins(b.end)>m){ next=toMins(b.end)-m; break; }
+  }
+  $('stLeft').textContent = next==null?'—':(next>=60? Math.floor(next/60)+'h '+Math.round(next%60)+'m' : Math.round(next)+'m');
+}
+
+function renderShelf(){
+  const shelf=$('shelf'); shelf.innerHTML='';
+  const days=S.history.slice(-6).concat([{dayKey:S.dayKey,pct:Math.round(pct()),full:pct()>=100,today:true}]);
+  for(const d of days){
+    const dt=new Date(d.dayKey+'T12:00:00');
+    const el=document.createElement('div');
+    el.className='mini'+(d.today?' today':'');
+    el.innerHTML='<div class="glass">'+(d.full?'<div class="star">★</div>':'')+'<div class="liq" style="height:'+Math.round(d.pct*.56)+'px"></div></div>'+
+                 '<div class="d">'+['S','M','T','W','T','F','S'][dt.getDay()]+'</div>';
+    el.title=d.dayKey+' — '+d.pct+'%';
+    shelf.appendChild(el);
+  }
+  $('streakLbl').textContent=S.streak.current;
+  $('bestLbl').textContent=S.streak.best;
+}
+
+function renderTimeline(){
+  const track=$('tlTrack'); track.innerHTML='';
+  const DAY0=360, DAY1=1440; /* 6:00 → 24:00 */
+  const px=v=>Math.max(0,Math.min(100,(v-DAY0)/(DAY1-DAY0)*100));
+  for(const b of sortedBlocks()){
+    const el=document.createElement('div');
+    el.className='tl-block'+(blockEnded(b)?' past':blockLive(b)?' live':'');
+    el.style.left=px(toMins(b.start))+'%';
+    el.style.width=Math.max(1.5,px(toMins(b.end))-px(toMins(b.start)))+'%';
+    el.innerHTML='<i>'+esc(b.label)+'</i>';
+    track.appendChild(el);
+  }
+  const now=document.createElement('div');
+  now.className='tl-now'; now.style.left=px(minsNow())+'%';
+  track.appendChild(now);
+}
+
+function cdText(mins){
+  if(mins<=0) return 'closed';
+  if(mins<60) return Math.floor(mins)+'m '+pad(Math.floor((mins%1)*60))+'s';
+  return Math.floor(mins/60)+'h '+pad(Math.floor(mins%60))+'m';
+}
+
+function renderNowline(){
+  const m=minsNow(); const live=sortedBlocks().find(blockLive);
+  const nl=$('nowline');
+  if(live){
+    const left=toMins(live.end)-m;
+    $('curBlockLbl').textContent=live.label;
+    $('curCountLbl').textContent='closes in '+cdText(left);
+    nl.classList.toggle('lastcall', left<=15 && S.tasks.some(t=>t.blockId===live.id&&!t.done&&!t.spilled));
+  }else{
+    const up=sortedBlocks().find(b=>toMins(b.start)>m);
+    $('curBlockLbl').textContent= up? 'Between blocks' : (S.blocks.length?'Service has ended':'No blocks yet');
+    $('curCountLbl').textContent= up? '“'+up.label+'” at '+fmtHM(up.start) : '';
+    nl.classList.remove('lastcall');
+  }
+}
+
+function taskRow(t){
+  const li=document.createElement('li');
+  li.className='task'+(t.done?' done':'')+(t.spilled?' spilled':'');
+  li.innerHTML=
+    '<button class="tick" data-act="tick" data-id="'+t.id+'" aria-label="Complete task">✓</button>'+
+    '<span class="title">'+esc(t.title)+'</span>'+
+    (t.recurring?'<span class="badge rit">Ritual</span>':'')+
+    (t.spilled?'<span class="badge spill">Spilled</span>':'<span class="badge share">'+(share()?share().toFixed(0)+'%':'')+'</span>')+
+    '<button class="del" data-act="del" data-id="'+t.id+'" aria-label="Remove task">✕</button>';
+  return li;
+}
+
+function renderDay(){
+  const body=$('dayBody'); body.innerHTML='';
+  const blocks=sortedBlocks();
+  $('blockCountLbl').textContent=blocks.length+' blocks · '+S.tasks.length+' tasks';
+  if(!S.tasks.length&&!blocks.length){
+    const e=document.createElement('div');
+    e.className='empty';
+    e.innerHTML='<h3>The bottle stands empty</h3><p>Add time blocks and tasks — or pour a sample day to feel how the evening runs.</p>';
+    body.appendChild(e);
+    $('seedBtn').style.display='inline-block';
+  } else $('seedBtn').style.display='none';
+
+  const m=minsNow();
+  const renderGroup=(label,time,tasks,cls,blockId,cd)=>{
+    const div=document.createElement('div');
+    div.className='block '+cls;
+    div.innerHTML='<div class="block-head"><span class="t">'+esc(label)+'</span><span class="time mono">'+time+'</span>'+
+      '<span class="cd">'+cd+'</span>'+
+      (blockId?'<button class="del" data-act="delblock" data-id="'+blockId+'" aria-label="Delete block">✕</button>':'')+
+      '</div>';
+    const ul=document.createElement('ul'); ul.className='tasks';
+    if(tasks.length) tasks.forEach(t=>ul.appendChild(taskRow(t)));
+    else { const d=document.createElement('div'); d.className='empty-tasks'; d.textContent='Nothing on the tray.'; ul.appendChild(d); }
+    div.appendChild(ul);
+    body.appendChild(div);
+  };
+
+  for(const b of blocks){
+    const ts=S.tasks.filter(t=>t.blockId===b.id);
+    const ended=blockEnded(b), live=blockLive(b);
+    const open=ts.some(t=>!t.done&&!t.spilled);
+    const left=toMins(b.end)-m;
+    const cls=(ended?'ended':'')+(live&&open&&left<=15?' lastcall':'');
+    const cd= ended?'closed': live?'closes in '+cdText(left):'opens '+fmtHM(b.start);
+    renderGroup(b.label, fmtHM(b.start)+' – '+fmtHM(b.end), ts, cls, b.id, cd);
+  }
+  const loose=S.tasks.filter(t=>!t.blockId||!blockById(t.blockId));
+  if(loose.length) renderGroup('Anytime','due midnight',loose,'', null,'');
+
+  /* block select */
+  const sel=$('tBlock'); sel.innerHTML='';
+  const optA=document.createElement('option'); optA.value=''; optA.textContent='Anytime';
+  sel.appendChild(optA);
+  for(const b of blocks){ if(blockEnded(b)) continue;
+    const o=document.createElement('option'); o.value=b.id; o.textContent=b.label+' (until '+fmtHM(b.end)+')';
+    sel.appendChild(o);
+  }
+}
+
+function renderAll(){ renderBottle(); renderShelf(); renderTimeline(); renderNowline(); renderDay(); }
+
+/* ================= events ================= */
+document.addEventListener('click',e=>{
+  const btn=e.target.closest('[data-act]'); if(!btn) return;
+  const id=btn.dataset.id;
+  if(btn.dataset.act==='tick') completeTask(id);
+  if(btn.dataset.act==='del') deleteTask(id);
+  if(btn.dataset.act==='delblock'){
+    if(confirm('Close this block? Its tasks move to Anytime.')){
+      S.tasks.forEach(t=>{ if(t.blockId===id) t.blockId=null; });
+      S.blocks=S.blocks.filter(b=>b.id!==id); save(); renderAll();
+    }
+  }
+});
+$('tAddBtn').addEventListener('click',()=>{
+  const v=$('tTitle').value.trim(); if(!v) { $('tTitle').focus(); return; }
+  addTask(v, $('tBlock').value||null, $('tRitual').checked);
+  $('tTitle').value=''; $('tRitual').checked=false; $('tTitle').focus();
+});
+$('tTitle').addEventListener('keydown',e=>{ if(e.key==='Enter') $('tAddBtn').click(); });
+$('blockToggle').addEventListener('click',()=>$('blockAdd').classList.toggle('open'));
+$('bAddBtn').addEventListener('click',()=>{
+  const label=$('bLabel').value.trim()||'Block';
+  const s=$('bStart').value, en=$('bEnd').value;
+  if(!s||!en||toMins(en)<=toMins(s)){ toast('A block must end after it begins, darling.',true); return; }
+  S.blocks.push({id:uid(),label,start:s,end:en});
+  save(); $('bLabel').value=''; renderAll();
+});
+$('muteBtn').addEventListener('click',()=>{
+  S.settings.muted=!S.settings.muted; save();
+  $('muteState').textContent=S.settings.muted?'OFF':'ON';
+  if(!S.settings.muted) sfxClink();
+});
+$('seedBtn').addEventListener('click',()=>{
+  const mkT=(h1,m1,h2,m2,label)=>({id:uid(),label,start:pad(h1)+':'+pad(m1),end:pad(h2)+':'+pad(m2)});
+  const now=new Date(); const h=now.getHours();
+  const b1=mkT(Math.max(6,h),0,Math.min(23,Math.max(6,h)+2),0,'Deep Work');
+  const b2=mkT(Math.min(22,Math.max(6,h)+2),0,Math.min(23,Math.max(6,h)+4),0,'Admin & Calls');
+  const b3=mkT(19,0,22,0,'Evening Ritual');
+  S.blocks.push(b1,b2,b3);
+  addTask('Ship the thing you keep postponing', b1.id, false);
+  addTask('Clear the inbox to zero', b2.id, false);
+  addTask('30 minutes of movement', b3.id, true);
+  addTask('Plan tomorrow before midnight', null, true);
+  sfxCork();
+  toast('A sample evening, on the house. Now — pour.',false,'The House');
+});
+$('demoBtn').addEventListener('click',()=>{
+  demoDip=16; sfxGlug(5); toast(pick(LINES.spill),true);
+});
+$('resetBtn').addEventListener('click',()=>{
+  if(confirm('Restock today’s bottle? Task states reset; nothing is deleted.')){
+    S.tasks.forEach(t=>{t.done=false;t.spilled=false;t.doneAt=null;});
+    warned.clear(); save(); renderAll(); sfxCork();
+    toast('A fresh bottle on the table. Prove you deserve it.',false,'The House');
+  }
+});
+/* unlock audio on first gesture */
+document.addEventListener('pointerdown',function un(){ audio(); document.removeEventListener('pointerdown',un); },{once:true});
+
+/* ================= boot & ticker ================= */
+S = load()||defaults();
+rollDayIfNeeded();
+$('dateLbl').textContent=new Date().toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'});
+$('muteState').textContent=S.settings.muted?'OFF':'ON';
+displayPct=pct(); /* no pour animation on load */
+sizeFx(); frame();
+renderAll();
+spillSweep(true); /* anything missed while the app was closed */
+
+setInterval(()=>{
+  rollDayIfNeeded();
+  spillSweep(false);
+  lastCallSweep();
+  renderNowline(); renderTimeline(); renderBottle();
+},1000);
+
+})();
+</script>
+
+</html>
