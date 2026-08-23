@@ -42,7 +42,7 @@ def dig(data: Any, path: str) -> Any:
                 return None
 
         if index is not None:
-            if not isinstance(current, (list, tuple)):
+            if not isinstance(current, list | tuple):
                 return None
             if index == "*":
                 return list(current)
@@ -100,10 +100,10 @@ def _iter_strings(value: Any) -> Iterable[str]:
                 return
         for nested in value.values():
             yield from _iter_strings(nested)
-    elif isinstance(value, (list, tuple, set)):
+    elif isinstance(value, list | tuple | set):
         for item in value:
             yield from _iter_strings(item)
-    elif isinstance(value, (int, float)):
+    elif isinstance(value, int | float):
         yield str(value)
 
 

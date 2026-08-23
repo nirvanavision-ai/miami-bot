@@ -247,7 +247,7 @@ def _sortable(value: Any) -> Any:
     """Make params/bodies stable for cache keys and safe for debug logs."""
     if isinstance(value, Mapping):
         return {str(k): _sortable(v) for k, v in sorted(value.items(), key=lambda kv: str(kv[0]))}
-    if isinstance(value, (list, tuple)):
+    if isinstance(value, list | tuple):
         return [_sortable(v) for v in value]
     return value
 

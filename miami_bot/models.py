@@ -375,7 +375,7 @@ class MatchResult:
 def _load_json(value: Any, default: Any) -> Any:
     if value in (None, ""):
         return default
-    if isinstance(value, (list, dict)):
+    if isinstance(value, list | dict):
         return value
     try:
         loaded = json.loads(value)
