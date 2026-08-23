@@ -29,13 +29,17 @@ Zero dependencies, zero build step, zero audio assets. Open
 - **Audio**: all SFX (cork pop, pour, clink, glug, fanfare) are synthesized live
   with the Web Audio API — no asset files. Audio unlocks on first user gesture
   per browser autoplay policy; mute toggle persists.
-- **Rendering**: a canvas liquid simulation clipped to a Don Julio-style
-  tapered-cone silhouette — a spring-mesh surface heightfield that sloshes
-  from cursor movement and device tilt, pour streams with droplets that
-  splash back into the surface, glug bubbles on drains, foam, speculars,
-  and confetti bursts. Custom cursor, magnetic buttons, and a liquid-fill
-  intro sequence round out the motion design (pink/blue palette).
-  `prefers-reduced-motion` disables all ambient animation.
+- **Rendering**: a dependency-free raw-WebGL 3D engine. The bottle is lathe
+  geometry (a 1942-style tapered cone) with a fresnel/specular glass shader
+  and a canvas-generated label texture that spins with the glass; drag to
+  orbit with inertia (auto-rotates when idle). The liquid is the same mesh
+  shader-clipped by a **world-horizontal plane**, so it stays level while
+  the bottle spins and tilts, with spring-damper slosh, waves, GL-point
+  bubbles, a cork that pops off during pours, and a projected 2D overlay
+  for pour streams, droplets, and confetti. Falls back to a flat 2D bottle
+  without WebGL. Pink-studio palette with blue accents; custom cursor,
+  magnetic buttons, liquid-fill intro. `prefers-reduced-motion` disables
+  ambient animation and the idle spin.
 - **No trademark trade dress**: the bottle silhouette and mark are original;
   "1942" is used as a number.
 
