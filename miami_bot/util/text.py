@@ -46,7 +46,7 @@ def parse_price(value: object) -> int | None:
     """'$8,500/mo' -> 8500. Rejects obvious sale prices."""
     if value is None:
         return None
-    if isinstance(value, (int, float)):
+    if isinstance(value, int | float):
         number = float(value)
     else:
         text = clean_text(value)
@@ -66,7 +66,7 @@ def parse_beds(value: object) -> float | None:
     """'2 Beds', '2+Den', 'Studio', 3 -> float bedrooms."""
     if value is None:
         return None
-    if isinstance(value, (int, float)):
+    if isinstance(value, int | float):
         return float(value) if value >= 0 else None
     text = clean_text(value).lower()
     if "studio" in text:
@@ -82,7 +82,7 @@ def parse_baths(value: object) -> float | None:
     """'2.5 Baths', '2 full 1 half', 2 -> float bathrooms (half = 0.5)."""
     if value is None:
         return None
-    if isinstance(value, (int, float)):
+    if isinstance(value, int | float):
         return float(value) if value >= 0 else None
     text = clean_text(value).lower()
     full = re.search(r"(\d+(?:\.\d+)?)\s*(?:full)?", text)
@@ -102,7 +102,7 @@ def parse_sqft(value: object) -> int | None:
     """'1,450 sq ft' / '1450' / 1450.0 -> 1450. Filters implausible values."""
     if value is None:
         return None
-    if isinstance(value, (int, float)):
+    if isinstance(value, int | float):
         number = float(value)
     else:
         text = clean_text(value).lower().replace(",", "")
